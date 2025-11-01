@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TaskFlow — Modern To-Do Web App (Single Page)</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <!-- WOW.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
+  <!-- Bootstrap bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #ffffff;
+      --muted: #6b7280;
+      --brand1: #0ea5a4; /* teal */
+      --brand2: #2563eb; /* blue */
+      --card: #ffffff;
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,#fbfdff 0%, #f5f8ff 100%);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      scroll-behavior:smooth;
+    }
+
+    /* NAVBAR - Professional */
+    .navbar{
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid rgba(15,23,42,0.04);
+    }
+    .brand {
+      display:flex; align-items:center; gap:10px; font-weight:700; color:var(--brand2);
+    }
+    .brand .logo {
+      width:40px; height:40px; background: linear-gradient(135deg,var(--brand2),var(--brand1));
+      border-radius:10px; display:grid; place-items:center; color:white; font-weight:800;
+      box-shadow: 0 8px 30px rgba(37,99,235,0.08);
+    }
+    .nav-link{ color: #0f172a; }
+    .nav-link:hover{ color: var(--brand2); }
+
+    /* Hero */
+    .hero {
+      min-height:72vh; display:flex; align-items:center; position:relative; overflow:hidden;
+    }
+    .hero .hero-bg {
+      position:absolute; inset:0; background-size:cover; background-position:center; z-index:0; filter: saturate(1.02) brightness(0.95);
+    }
+    .hero .overlay { position:absolute; inset:0; background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(245,248,255,0.55)); z-index:1; }
+    .hero .container { position:relative; z-index:2; }
+
+    .hero h1{ font-size:2.6rem; font-weight:700; line-height:1.02; color:#071433; }
+    .hero p.lead{ color: #334155; font-size:1.05rem; margin-top:8px; }
+
+    .btn-primary-grad {
+      background: linear-gradient(90deg,var(--brand2),var(--brand1));
+      color: white; border: none; border-radius: 999px; padding: .6rem 1.2rem; font-weight:700;
+      box-shadow: 0 12px 30px rgba(37,99,235,0.08);
+    }
+
+    /* Sections */
+    .section-title { color: var(--brand2); font-weight:700; margin-bottom:1rem; }
+    .card-ghost { background: white; border-radius: var(--radius); box-shadow: 0 8px 30px rgba(2,6,23,0.04); border: 1px solid rgba(2,6,23,0.03); }
+
+    /* To-do app layout */
+    #todoApp {
+      padding:18px; border-radius:12px; background: linear-gradient(180deg,#ffffff,#fcfdff); border:1px solid rgba(2,6,23,0.04);
+    }
+    .task-input { display:flex; gap:10px; align-items:center; }
+    .task-input input[type="text"]{
+      flex:1; padding:12px 16px; border-radius:999px; border:1px solid rgba(15,23,42,0.06); outline:none;
+      box-shadow: none; background: #fff; color: #071433;
+    }
+    .task-input input::placeholder{ color:var(--muted); }
+    .task-btn { border-radius:999px; padding:10px 14px; font-weight:700; }
+
+    ul.task-list{ list-style:none; margin:0; padding:0; max-height:480px; overflow:auto; }
+    ul.task-list li{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid rgba(2,6,23,0.04);
+      transition: transform .12s ease, box-shadow .12s ease;
+      background: #fff;
+    }
+    ul.task-list li:hover{ transform: translateY(-4px); box-shadow: 0 10px 30px rgba(2,6,23,0.04); }
+    .task-left { display:flex; gap:12px; align-items:center; }
+    .task-checkbox { width:44px; height:44px; border-radius:10px; display:grid; place-items:center; cursor:pointer; border:1px solid rgba(15,23,42,0.06); background: linear-gradient(180deg,#f8fafc,#ffffff); }
+    .task-title { font-weight:600; color:#071433; }
+    .task-meta { color:var(--muted); font-size:0.85rem; }
+
+    li.completed .task-title { text-decoration:line-through; color:#94a3b8; opacity:0.9; }
+    li.completed { background: linear-gradient(90deg,#f1f5f9,#f8fafc); }
+
+    .task-controls .btn { border-radius:8px; }
+
+    /* Filters & progress */
+    .filter-btns .btn { border-radius:999px; border:1px solid rgba(2,6,23,0.04); background: transparent; color:#0f172a; }
+    .filter-btns .btn.active { box-shadow: 0 8px 30px rgba(37,99,235,0.06); border-color: rgba(37,99,235,0.12); }
+
+    .progress { height: 12px; border-radius:999px; background:#eef2ff; overflow:hidden; border: 1px solid rgba(2,6,23,0.03); }
+    .progress-bar { background: linear-gradient(90deg,var(--brand2),var(--brand1)); }
+
+    /* Gallery images */
+    .gallery-img { height:200px; object-fit:cover; border-radius:10px; width:100%; }
+
+    /* Testimonials */
+    .avatar { width:56px; height:56px; border-radius:12px; object-fit:cover; }
+
+    /* Footer */
+    footer.site-footer { background: linear-gradient(90deg,#0ea5a4,#2563eb); color:white; padding:28px 0; margin-top:60px; }
+
+    @media (max-width:767px){
+      .hero h1{ font-size:1.6rem; }
+      .hero { padding:40px 0; }
+      ul.task-list{ max-height:340px; }
+    }
+
+    /* subtle scrollbars */
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(2,6,23,0.06); border-radius:8px; }
+  </style>
+</head>
+<body>
+
+  <!-- ========== 1. Header / Navbar ========== -->
+  <nav class="navbar navbar-expand-lg sticky-top py-2">
+    <div class="container">
+      <a class="brand" href="#">
+        <div class="logo">TF</div>
+        <div>
+          <div style="font-size:0.95rem">TaskFlow</div>
+          <small style="display:block; margin-top:-4px; color:var(--muted); font-weight:600;">Organize. Focus. Finish.</small>
+        </div>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navlinks" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon">☰</span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navlinks">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#hero">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+          <li class="nav-item"><a class="nav-link" href="#todo">App</a></li>
+          <li class="nav-item"><a class="nav-link" href="#gallery">Gallery</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========== 2. Hero Banner ========== -->
+  <section id="hero" class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-7 wow animate__animated animate__fadeInLeft" data-wow-delay="0.12s">
+          <h1>Productivity made simple — beautiful To-Do app for professionals</h1>
+          <p class="lead">Add tasks, organize priorities, track progress and keep everything saved locally. No account, no setup — just work.</p>
+          <div class="mt-4">
+            <a href="#todo" class="btn btn-primary-grad me-2">Open App</a>
+            <a href="#features" class="btn btn-outline-secondary">Explore Features</a>
+          </div>
+          <div class="mt-4 d-flex gap-3">
+            <div class="small text-muted">Trusted by teams</div>
+            <img src="images/1.avif" alt="team" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+            <img src="images/2.avif" alt="team2" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+            <img src="images/3.avif" alt="team3" style="width:40px;height:40px;border-radius:8px;object-fit:cover">
+          </div>
+        </div>
+
+        <div class="col-lg-5 wow animate__animated animate__fadeInRight" data-wow-delay="0.2s">
+          <div class="card card-ghost p-3 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <div style="font-size:0.9rem; color:var(--muted)">Today's Focus</div>
+                <div style="font-weight:700; font-size:1.25rem">Plan meeting • Finish report</div>
+              </div>
+              <div class="badge" style="background:linear-gradient(90deg,var(--brand2),var(--brand1)); color:white; padding:8px 12px; border-radius:10px; font-weight:700;">Pro</div>
+            </div>
+
+            <img src="images/4.avif" class="img-fluid rounded" alt="app-preview">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 3. About Section ========== -->
+  <section id="about" class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">About TaskFlow</h2>
+      <div class="row align-items-center">
+        <div class="col-md-6 wow animate__animated animate__fadeInLeft">
+          <p class="lead">TaskFlow is a single-page To-Do application built for clarity and speed. It combines minimal UI with strong functionality — LocalStorage persistence, quick edits, filters, and progress tracking.</p>
+          <ul class="list-unstyled">
+            <li>✔ No signup required</li>
+            <li>✔ Offline-ready (data in browser)</li>
+            <li>✔ Mobile-first responsive design</li>
+          </ul>
+        </div>
+        <div class="col-md-6 wow animate__animated animate__fadeInRight">
+          <div class="card card-ghost p-3">
+            <img src="images/5.avif" class="img-fluid rounded" alt="about-image">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 4. Features (cards with images) ========== -->
+  <section id="features" class="py-5" style="background:#f7fbff;">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Key Features</h2>
+      <div class="row g-4">
+        <div class="col-md-4 wow animate__animated animate__zoomIn" data-wow-delay="0.08s">
+          <div class="card card-ghost h-100 p-3">
+            <img src="images/6.avif" class="gallery-img" alt="feature1">
+            <div class="card-body">
+              <h5>Add & Edit</h5>
+              <p class="text-muted">Create tasks in seconds and edit them later if plans change.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 wow animate__animated animate__zoomIn" data-wow-delay="0.16s">
+          <div class="card card-ghost h-100 p-3">
+            <img src="images/7.avif" class="gallery-img" alt="feature2">
+            <div class="card-body">
+              <h5>Filters & Progress</h5>
+              <p class="text-muted">Filter tasks (All/Active/Completed) and view completion stats at a glance.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 wow animate__animated animate__zoomIn" data-wow-delay="0.24s">
+          <div class="card card-ghost h-100 p-3">
+            <img src="images/8.avif" class="gallery-img" alt="feature3">
+            <div class="card-body">
+              <h5>Export / Import</h5>
+              <p class="text-muted">Quickly export your tasks or import them on another device (JSON).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 5. Productivity Stats ========== -->
+  <section id="stats" class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Your Productivity</h2>
+      <div class="row g-4 justify-content-center">
+        <div class="col-md-8 wow animate__animated animate__fadeInUp">
+          <div class="card card-ghost p-3 d-flex flex-column gap-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong style="font-size:1.2rem" id="statText">0 tasks • 0 completed</strong>
+                <div class="text-muted">Live insights based on your current list.</div>
+              </div>
+              <div style="width:45%;">
+                <div class="progress" aria-hidden="true">
+                  <div id="mainProgress" class="progress-bar" role="progressbar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 flex-wrap">
+              <button id="markAll" class="btn btn-outline-primary">Mark all done</button>
+              <button id="clearCompleted" class="btn btn-outline-danger">Clear completed</button>
+              <button id="exportBtn" class="btn btn-outline-secondary">Export JSON</button>
+              <label class="btn btn-outline-secondary mb-0">
+                Import JSON <input id="importInput" type="file" accept=".json" hidden>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 6. To-Do App (main functionality) ========== -->
+  <section id="todo" class="py-5" style="background:#f7fbff;">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Task Manager</h2>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-10">
+          <div id="todoApp" class="wow animate__animated animate__fadeInUp">
+
+            <!-- controls -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 mb-3">
+              <div style="min-width:260px;">
+                <div class="task-input">
+                  <input id="taskInput" type="text" placeholder="Add a new task — e.g. Review Q3 report" aria-label="New task">
+                  <button id="addTaskBtn" class="btn task-btn btn-primary-grad">Add</button>
+                </div>
+                <small class="text-muted">Tip: press Enter to add.</small>
+              </div>
+
+              <div class="d-flex gap-2 align-items-center flex-wrap">
+                <div class="filter-btns btn-group" role="group" aria-label="filters">
+                  <button class="btn btn-sm active" data-filter="all">All</button>
+                  <button class="btn btn-sm" data-filter="active">Active</button>
+                  <button class="btn btn-sm" data-filter="completed">Completed</button>
+                </div>
+
+                <div class="ms-2 text-muted">Sort:</div>
+                <select id="sortSelect" class="form-select form-select-sm" style="width:140px;">
+                  <option value="new">Newest</option>
+                  <option value="old">Oldest</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row g-4">
+              <div class="col-lg-8">
+                <ul id="taskList" class="task-list" aria-live="polite"></ul>
+              </div>
+
+              <div class="col-lg-4">
+                <div class="card card-ghost p-3">
+                  <h6 class="mb-2">Quick Stats</h6>
+                  <div class="mb-3">
+                    <div style="font-size:1.35rem; font-weight:700" id="countCompleted">0</div>
+                    <div class="text-muted">Completed tasks</div>
+                  </div>
+                  <div class="mb-3">
+                    <div style="font-size:1.35rem; font-weight:700" id="countTotal">0</div>
+                    <div class="text-muted">Total tasks</div>
+                  </div>
+
+                  <hr style="border-color: rgba(2,6,23,0.04)">
+
+                  <div>
+                    <button id="removeAll" class="btn btn-outline-danger w-100 mb-2">Remove All</button>
+                    <button id="toggleTheme" class="btn btn-outline-secondary w-100">Toggle Contrast (demo)</button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div> <!-- todoApp -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 7. Gallery (real images) ========== -->
+  <section id="gallery" class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Gallery</h2>
+      <div class="row g-3">
+        <div class="col-md-4 wow animate__animated animate__fadeIn" data-wow-delay="0.08s">
+          <img src="images/11.avif" alt="gallery1" class="gallery-img">
+        </div>
+        <div class="col-md-4 wow animate__animated animate__fadeIn" data-wow-delay="0.16s">
+          <img src="images/12.avif" alt="gallery2" class="gallery-img">
+        </div>
+        <div class="col-md-4 wow animate__animated animate__fadeIn" data-wow-delay="0.24s">
+          <img src="images/a.jpeg" alt="gallery3" class="gallery-img">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 8. Testimonials ========== -->
+  <section id="testimonials" class="py-5" style="background:#f7fbff;">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Testimonials</h2>
+      <div class="row g-3">
+        <div class="col-md-4 wow animate__animated animate__fadeInUp">
+          <div class="card card-ghost p-3">
+            <div class="d-flex gap-3">
+              <img class="avatar" src="images/13.avif" alt="user1">
+              <div>
+                <strong>Amna R.</strong>
+                <div class="text-muted">"TaskFlow helped me finally clear my daily backlog."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 wow animate__animated animate__fadeInUp" data-wow-delay="0.12s">
+          <div class="card card-ghost p-3">
+            <div class="d-flex gap-3">
+              <img class="avatar" src="images/c.jpeg" alt="user2">
+              <div>
+                <strong>Bilal S.</strong>
+                <div class="text-muted">"Lightweight and fast — perfect for quick planning."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 wow animate__animated animate__fadeInUp" data-wow-delay="0.24s">
+          <div class="card card-ghost p-3">
+            <div class="d-flex gap-3">
+              <img class="avatar" src="images/b.jpeg" alt="user3">
+              <div>
+                <strong>Sara K.</strong>
+                <div class="text-muted">"I love the simple export/import feature."</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 9. FAQ ========== -->
+  <section id="faq" class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">FAQ</h2>
+      <div class="row justify-content-center">
+        <div class="col-md-8 wow animate__animated animate__fadeInUp">
+          <div class="card card-ghost p-3">
+            <h6>Is TaskFlow free?</h6>
+            <p class="text-muted">Yes. This demo app stores your tasks locally in your browser using LocalStorage.</p>
+            <h6>Can I move tasks to another device?</h6>
+            <p class="text-muted">Use Export JSON and then import on the other device.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 10. Newsletter ========== -->
+  <section id="newsletter" class="py-5" style="background:#f7fbff;">
+    <div class="container">
+      <div class="card card-ghost p-4 text-center wow animate__animated animate__fadeInUp">
+        <h3>Get productivity tips</h3>
+        <p class="text-muted">Subscribe for occasional tips and UI updates (demo).</p>
+        <div class="row justify-content-center mt-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <input id="newsletterEmail" type="email" class="form-control" placeholder="you@example.com" aria-label="email">
+              <button id="newsletterBtn" class="btn btn-primary-grad">Subscribe</button>
+            </div>
+            <small id="newsletterMsg" class="d-block mt-2 text-muted"></small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 11. Contact ========== -->
+  <section id="contact" class="py-5">
+    <div class="container">
+      <h2 class="section-title text-center wow animate__animated animate__fadeInUp">Contact</h2>
+      <div class="row justify-content-center">
+        <div class="col-md-8 wow animate__animated animate__fadeInUp">
+          <div class="card card-ghost p-4">
+            <form id="contactForm">
+              <div class="mb-3">
+                <label class="form-label">Name</label>
+                <input required class="form-control" id="contactName" placeholder="Your name">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input required type="email" class="form-control" id="contactEmail" placeholder="you@example.com">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Message</label>
+                <textarea required class="form-control" id="contactMsg" rows="4" placeholder="How can we help?"></textarea>
+              </div>
+              <button class="btn btn-primary-grad" type="submit">Send Message</button>
+              <small id="contactResult" class="d-block mt-2 text-muted"></small>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 12. Footer ========== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-6 text-center text-md-start">
+          <div style="font-weight:700; color:white;">TaskFlow</div>
+          <small style="color:rgba(255,255,255,0.9)">Built with HTML • CSS • JS • jQuery • Bootstrap</small>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <small>© 2025 TaskFlow • Designed by You</small>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= JS: App Logic ================= -->
+  <script>
+    new WOW().init();
+
+    (function($){
+      const STORAGE_KEY = 'taskflow_v1_tasks';
+
+      // DOM
+      const $taskInput = $('#taskInput'), $addTaskBtn = $('#addTaskBtn'), $taskList = $('#taskList');
+      const $filterBtns = $('.filter-btns .btn'), $sortSelect = $('#sortSelect');
+      const $countCompleted = $('#countCompleted'), $countTotal = $('#countTotal');
+      const $statText = $('#statText'), $mainProgress = $('#mainProgress');
+      const $markAll = $('#markAll'), $clearCompleted = $('#clearCompleted');
+      const $removeAll = $('#removeAll'), $exportBtn = $('#exportBtn'), $importInput = $('#importInput');
+
+      let tasks = []; // {id, text, completed, created}
+
+      // utility
+      function uid(){ return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+      function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+      function load(){ try { tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ tasks = []; } render(); }
+      function formatDate(ts){ const d=new Date(ts); return d.toLocaleString(); }
+
+      function render(){
+        const filter = $('.filter-btns .btn.active').data('filter') || 'all';
+        const sort = $sortSelect.val() || 'new';
+        let list = tasks.slice();
+
+        if(filter === 'active') list = list.filter(t=>!t.completed);
+        if(filter === 'completed') list = list.filter(t=>t.completed);
+
+        list.sort((a,b)=> sort==='new' ? b.created - a.created : a.created - b.created);
+
+        $taskList.empty();
+        if(list.length === 0){
+          $taskList.append('<li class="text-muted py-4 text-center">No tasks yet — add your first task.</li>');
+        } else {
+          list.forEach(t=>{
+            const li = $(`
+              <li data-id="${t.id}" class="${t.completed ? 'completed':''} animate__animated animate__fadeInUp">
+                <div class="task-left">
+                  <div class="task-checkbox" role="button" aria-label="Toggle complete">
+                    ${t.completed ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#001" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect width="18" height="18" x="3" y="3" rx="4" ry="4" stroke="#9ca3af" stroke-width="1.5"/></svg>'}
+                  </div>
+                  <div>
+                    <div class="task-title">${escapeHtml(t.text)}</div>
+                    <div class="task-meta">${formatDate(t.created)}</div>
+                  </div>
+                </div>
+
+                <div class="task-controls d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-secondary editBtn">Edit</button>
+                  <button class="btn btn-sm btn-outline-danger deleteBtn">Delete</button>
+                </div>
+              </li>
+            `);
+            $taskList.append(li);
+          });
+        }
+
+        // stats
+        const total = tasks.length;
+        const completed = tasks.filter(x=>x.completed).length;
+        $countTotal.text(total);
+        $countCompleted.text(completed);
+        const percent = total === 0 ? 0 : Math.round((completed/total)*100);
+        $statText.text(`${total} tasks • ${completed} completed`);
+        $mainProgress.css('width', percent + '%');
+      }
+
+      function escapeHtml(text){ return $('<div>').text(text).html(); }
+
+      // add
+      $addTaskBtn.on('click', function(){
+        const txt = $taskInput.val().trim();
+        if(!txt) { $taskInput.focus(); return; }
+        tasks.unshift({ id: uid(), text: txt, completed:false, created: Date.now() });
+        save(); render(); $taskInput.val(''); $taskInput.focus();
+      });
+      $taskInput.on('keypress', function(e){ if(e.key === 'Enter'){ $addTaskBtn.click(); } });
+
+      // toggle complete
+      $taskList.on('click', '.task-checkbox', function(){
+        const id = $(this).closest('li').data('id');
+        tasks = tasks.map(t=> t.id===id ? {...t, completed: !t.completed} : t);
+        save(); render();
+      });
+
+      // delete
+      $taskList.on('click', '.deleteBtn', function(){
+        const id = $(this).closest('li').data('id');
+        if(!confirm('Delete this task?')) return;
+        tasks = tasks.filter(t=>t.id !== id);
+        save(); render();
+      });
+
+      // edit
+      $taskList.on('click', '.editBtn', function(){
+        const id = $(this).closest('li').data('id');
+        const task = tasks.find(t=>t.id===id);
+        if(!task) return;
+        const newText = prompt('Edit task:', task.text);
+        if(newText === null) return;
+        if(newText.trim() === '') { alert('Task cannot be empty'); return; }
+        tasks = tasks.map(t=> t.id===id ? {...t, text: newText.trim()} : t);
+        save(); render();
+      });
+
+      // filters
+      $filterBtns.on('click', function(){
+        $filterBtns.removeClass('active');
+        $(this).addClass('active');
+        render();
+      });
+
+      // sort
+      $sortSelect.on('change', render);
+
+      // mark all done
+      $markAll.on('click', function(){
+        tasks = tasks.map(t=> ({...t, completed:true}));
+        save(); render();
+      });
+
+      // clear completed
+      $clearCompleted.on('click', function(){
+        tasks = tasks.filter(t=>!t.completed);
+        save(); render();
+      });
+
+      // remove all
+      $removeAll.on('click', function(){
+        if(!confirm('Remove ALL tasks?')) return;
+        tasks = []; save(); render();
+      });
+
+      // export
+      $exportBtn.on('click', function(){
+        const data = JSON.stringify(tasks, null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'taskflow-tasks.json'; a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // import
+      $importInput.on('change', function(e){
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt){
+          try {
+            const imported = JSON.parse(evt.target.result);
+            if(Array.isArray(imported)) {
+              // basic validation
+              const sanitized = imported.filter(t=> t.id && t.text).map(t=>({
+                id: t.id || uid(),
+                text: t.text || '',
+                completed: !!t.completed,
+                created: t.created || Date.now()
+              }));
+              tasks = sanitized.concat(tasks);
+              save(); render();
+              alert('Import successful.');
+            } else alert('Invalid file format.');
+          } catch(err){ alert('Could not import file.'); }
+        };
+        reader.readAsText(file);
+        $(this).val('');
+      });
+
+      // newsletter demo
+      $('#newsletterBtn').on('click', function(){
+        const email = $('#newsletterEmail').val().trim();
+        if(!email || !email.includes('@')) { $('#newsletterMsg').text('Please enter a valid email.'); return; }
+        $('#newsletterMsg').text('Thanks — demo subscription saved.');
+        $('#newsletterEmail').val('');
+        setTimeout(()=> $('#newsletterMsg').text(''), 3000);
+      });
+
+      // contact demo
+      $('#contactForm').on('submit', function(e){
+        e.preventDefault();
+        $('#contactResult').text('Message sent (demo). Thank you!');
+        $('#contactName,#contactEmail,#contactMsg').val('');
+        setTimeout(()=> $('#contactResult').text(''), 3500);
+      });
+
+      // small theme toggle demo (contrast)
+      $('#toggleTheme').on('click', function(){
+        $('body').toggleClass('high-contrast');
+        if($('body').hasClass('high-contrast')){
+          $('body').css('background','linear-gradient(180deg,#f0fdf4,#ecfeff)');
+        } else {
+          $('body').css('background','linear-gradient(180deg,#fbfdff 0%, #f5f8ff 100%)');
+        }
+      });
+
+      // initial load
+      load();
+
+      // accessibility: focus input
+      $taskInput.focus();
+
+    })(jQuery);
+  </script>
+</body>
+</html>
